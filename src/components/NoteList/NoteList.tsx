@@ -10,36 +10,25 @@ interface NoteListProps {
 function NoteList({ notes }: NoteListProps) {
   const queryClient = useQueryClient();
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteNote(id),
-
+  const { mutate } = useMutation({
+    mutationFn: deleteNote,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["notes"],
-      });
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
   });
-
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
-  };
 
   return (
     <ul className={css.list}>
       {notes.map((note) => (
         <li key={note.id} className={css.listItem}>
           <h2 className={css.title}>{note.title}</h2>
-
           <p className={css.content}>{note.content}</p>
-
           <div className={css.footer}>
             <span className={css.tag}>{note.tag}</span>
-
             <button
               className={css.button}
               type="button"
-              onClick={() => handleDelete(note.id)}
-              disabled={deleteMutation.isPending}
+              onClick={() => mutate(note.id)}
             >
               Delete
             </button>

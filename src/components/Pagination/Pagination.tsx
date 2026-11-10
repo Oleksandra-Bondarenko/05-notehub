@@ -13,36 +13,27 @@ const ReactPaginate = (
 ).default;
 
 interface PaginationProps {
-  pageCount: number;
+  totalPages: number;
   currentPage: number;
   onPageChange: (page: number) => void;
 }
 
 const Pagination = ({
-  pageCount,
+  totalPages,
   currentPage,
   onPageChange,
 }: PaginationProps) => {
   return (
     <ReactPaginate
-      pageCount={pageCount}
-      pageRangeDisplayed={3}
+      pageCount={totalPages}
+      pageRangeDisplayed={5}
       marginPagesDisplayed={1}
-      onPageChange={(event) => onPageChange(event.selected)}
+      onPageChange={({ selected }) => onPageChange(selected + 1)}
       forcePage={currentPage - 1}
       containerClassName={css.pagination}
-      pageClassName={css.page}
-      pageLinkClassName={css.pageLink}
-      previousClassName={css.previous}
-      previousLinkClassName={css.previousLink}
-      nextClassName={css.next}
-      nextLinkClassName={css.nextLink}
       activeClassName={css.active}
-      disabledClassName={css.disabled}
-      breakClassName={css.break}
-      breakLinkClassName={css.breakLink}
-      previousLabel="←"
       nextLabel="→"
+      previousLabel="←"
     />
   );
 };

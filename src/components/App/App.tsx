@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useDebouncedCallback } from "use-debounce";
+import { useDebounce } from "use-debounce";
 import css from "./App.module.css";
 import { fetchNotes } from "../../services/noteService";
 import NoteList from "../NoteList/NoteList";
@@ -10,37 +10,32 @@ import Pagination from "../Pagination/Pagination";
 import SearchBox from "../SearchBox/SearchBox";
 
 const App = () => {
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [debouncedSearch] = useDebounce(search, 300);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["notes", page, search],
-
-    queryFn: () => fetchNotes(search, page),
-
+  const { data, isLoading, isSuccess, isError } = useQuery({
+    queryKey: ["notes", debouncedSearch, currentPage],
+    queryFn: () => fetchNotes(debouncedSearch, currentPage),
     placeholderData: keepPreviousData,
   });
 
-  const handleSearch = useDebouncedCallback((value: string) => {
-    setSearch(value);
-    setPage(1);
-  }, 500);
-
-  const handlePageChange = (selectedPage: number) => {
-    setPage(selectedPage + 1);
+  const handleSearch = (search: string) => {
+    setCurrentPage(1);
+    setSearch(search);
   };
 
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox onChange={handleSearch} />
+        <SearchBox search={search} onSearch={handleSearch} />
 
-        {data && data.totalPages > 1 && (
+        {isSuccess && data.totalPages > 1 && (
           <Pagination
-            pageCount={data.totalPages}
-            currentPage={page}
-            onPageChange={handlePageChange}
+            totalPages={data.totalPages}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
           />
         )}
 
@@ -57,9 +52,9 @@ const App = () => {
 
       {isError && <p>Something went wrong. Please try again.</p>}
 
-      {data && data.notes.length > 0 && <NoteList notes={data.notes} />}
+      {isSuccess && data.notes.length > 0 && <NoteList notes={data.notes} />}
 
-      {data && data.notes.length === 0 && !isLoading && <p>No notes found.</p>}
+      {isSuccess && data.notes.length === 0 && <p>No notes found.</p>}
 
       {isModalOpen && (
         <Modal onClose={() => setIsModalOpen(false)}>

@@ -1,21 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form, Field, ErrorMessage, type FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { createNote, type CreateNoteParams } from "../../services/noteService";
-import type { NoteTag } from "../../types/note";
 import css from "./NoteForm.module.css";
 
 interface NoteFormProps {
   onCancel: () => void;
 }
 
-interface NoteFormValues {
-  title: string;
-  content: string;
-  tag: NoteTag;
-}
-
-const noteTags: NoteTag[] = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
+const initialValues: CreateNoteParams = {
+  title: "",
+  content: "",
+  tag: "Todo",
+};
 
 const validationSchema = Yup.object({
   title: Yup.string()
@@ -25,20 +22,16 @@ const validationSchema = Yup.object({
 
   content: Yup.string().max(500, "Content must be at most 500 characters"),
 
-  tag: Yup.string().oneOf(noteTags, "Invalid tag").required("Tag is required"),
+  tag: Yup.string()
+    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"])
+    .required("Tag is required"),
 });
-
-const initialValues: NoteFormValues = {
-  title: "",
-  content: "",
-  tag: "Todo",
-};
 
 const NoteForm = ({ onCancel }: NoteFormProps) => {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (note: CreateNoteParams) => createNote(note),
+    mutationFn: createNote,
 
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -49,8 +42,15 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
     },
   });
 
-  const handleSubmit = (values: NoteFormValues) => {
-    createMutation.mutate(values);
+  const handleSubmit = (
+    values: CreateNoteParams,
+    actions: FormikHelpers<CreateNoteParams>,
+  ) => {
+    createMutation.mutate(values, {
+      onSuccess: () => {
+        actions.resetForm();
+      },
+    });
   };
 
   return (
@@ -62,15 +62,12 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
       <Form className={css.form}>
         <div className={css.formGroup}>
           <label htmlFor="title">Title</label>
-
           <Field id="title" type="text" name="title" className={css.input} />
-
           <ErrorMessage name="title" component="span" className={css.error} />
         </div>
 
         <div className={css.formGroup}>
           <label htmlFor="content">Content</label>
-
           <Field
             as="textarea"
             id="content"
@@ -78,21 +75,18 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
             rows={8}
             className={css.textarea}
           />
-
           <ErrorMessage name="content" component="span" className={css.error} />
         </div>
 
         <div className={css.formGroup}>
           <label htmlFor="tag">Tag</label>
-
           <Field as="select" id="tag" name="tag" className={css.select}>
-            {noteTags.map((tag) => (
-              <option value={tag} key={tag}>
-                {tag}
-              </option>
-            ))}
+            <option value="Todo">Todo</option>
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+            <option value="Meeting">Meeting</option>
+            <option value="Shopping">Shopping</option>
           </Field>
-
           <ErrorMessage name="tag" component="span" className={css.error} />
         </div>
 
@@ -100,19 +94,14 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
           <button type="button" className={css.cancelButton} onClick={onCancel}>
             Cancel
           </button>
-
           <button
             type="submit"
             className={css.submitButton}
             disabled={createMutation.isPending}
           >
-            {createMutation.isPending ? "Creating..." : "Create note"}
+            Create note
           </button>
         </div>
-
-        {createMutation.isError && (
-          <p className={css.error}>Failed to create note. Please try again.</p>
-        )}
       </Form>
     </Formik>
   );
