@@ -9,8 +9,6 @@ import NoteForm from "../NoteForm/NoteForm";
 import Pagination from "../Pagination/Pagination";
 import SearchBox from "../SearchBox/SearchBox";
 
-const PER_PAGE = 12;
-
 const App = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -19,12 +17,7 @@ const App = () => {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["notes", page, search],
 
-    queryFn: () =>
-      fetchNotes({
-        page,
-        perPage: PER_PAGE,
-        search,
-      }),
+    queryFn: () => fetchNotes(search, page),
 
     placeholderData: keepPreviousData,
   });
